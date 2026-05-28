@@ -1,0 +1,17 @@
+{
+  "name": "Relay",
+  "short_name": "Relay",
+  "description": "Personal meeting follow-up dashboard from pasted notes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/relay-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

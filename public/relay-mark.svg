@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="relayTitle">
+  <title id="relayTitle">Relay</title>
+  <defs>
+    <linearGradient id="relayGradient" x1="96" x2="416" y1="88" y2="424" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f7c948"/>
+      <stop offset="0.55" stop-color="#37d6c7"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="#10202d"/>
+  <rect x="88" y="88" width="336" height="336" rx="84" fill="url(#relayGradient)"/>
+  <path fill="#10202d" d="M167 164h107c47 0 82 31 82 75 0 35-21 61-55 72l67 84h-72l-61-78h-10v78h-58V164Zm58 106h45c17 0 29-11 29-28s-12-28-29-28h-45v56Z"/>
+</svg>
