@@ -1,21 +1,46 @@
 import { expect, test } from "@playwright/test";
 
+const relayFlowNotes = `Meeting title: Hackathon demo planning
+Date: Thursday
+
+Context:
+Solo planning meeting to make the Relay demo tighter before submission.
+
+Resources:
+Pitch outline: https://docs.google.com/document/d/sample-relay-pitch
+Demo checklist: https://example.com/relay-demo-checklist
+
+Questions:
+Should the demo show JSON export?
+
+Due dates:
+Finish the 90-second demo script by Friday
+
+Meeting minutes:
+We decided the app should stay focused on personal meeting minutes and a smaller demo scope.
+I need to finish the 90-second demo script by Friday.
+Send the final project summary to the judges after the demo is recorded.`;
+
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.clear());
   await page.goto("/");
 });
 
 test("single paste input generates the ClassLoop-style dashboard", async ({ page }) => {
   await expect(page).toHaveTitle(/Relay/);
   await expect(page.getByRole("heading", { name: /Paste meeting notes/ })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Meeting notes" })).toBeVisible();
+  const notesInput = page.getByRole("textbox", { name: "Meeting notes" });
+  await expect(notesInput).toBeVisible();
+  await expect(notesInput).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Load sample" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Open copy link/i })).toHaveAttribute(
     "href",
     "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy",
   );
+  await expect(page.getByRole("link", { name: "Edit source doc" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Meeting notes template" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Load sample" }).click();
-  await expect(page.getByText("Sample notes loaded.")).toBeVisible();
+  await notesInput.fill(relayFlowNotes);
   await page.getByRole("button", { name: "Generate dashboard" }).first().click();
 
   await expect(page.getByRole("heading", { name: "Hackathon demo planning" })).toBeVisible();
@@ -55,7 +80,7 @@ test("single paste input generates the ClassLoop-style dashboard", async ({ page
 });
 
 test("dashboard flow stays usable on mobile", async ({ page }) => {
-  await page.getByRole("button", { name: "Load sample" }).click();
+  await page.getByRole("textbox", { name: "Meeting notes" }).fill(relayFlowNotes);
   await page.getByRole("button", { name: "Generate dashboard" }).first().click();
   await expect(page.getByRole("heading", { name: "Hackathon demo planning" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your tasks" })).toBeVisible();

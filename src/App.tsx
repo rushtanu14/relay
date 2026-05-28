@@ -18,25 +18,21 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { createRelayDraft, relayTemplateText, sampleMeetingNotes } from "./relay";
+import { createRelayDraft, relayTemplateText } from "./relay";
 import type { RelayDraft, RelayTask, TaskStatus } from "./types";
 import "./styles.css";
 
 type ViewKey = "capture" | "loading" | "dashboard" | "history" | "template";
 
 type SavedState = {
-  pasteText: string;
   drafts: RelayDraft[];
   activeDraftId: string | null;
 };
 
-const STORAGE_KEY = "relay:workspace:v2";
+const STORAGE_KEY = "relay:workspace:v3";
 const TEMPLATE_COPY_URL =
   import.meta.env.VITE_RELAY_TEMPLATE_COPY_URL ||
   "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy";
-const TEMPLATE_EDIT_URL =
-  import.meta.env.VITE_RELAY_TEMPLATE_EDIT_URL ||
-  "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/edit?tab=t.0";
 
 const statusLabels: Record<TaskStatus, string> = {
   todo: "Todo",
@@ -45,18 +41,17 @@ const statusLabels: Record<TaskStatus, string> = {
 };
 
 function loadSavedState(): SavedState {
-  if (typeof window === "undefined") return { pasteText: "", drafts: [], activeDraftId: null };
+  if (typeof window === "undefined") return { drafts: [], activeDraftId: null };
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { pasteText: "", drafts: [], activeDraftId: null };
+    if (!raw) return { drafts: [], activeDraftId: null };
     const parsed = JSON.parse(raw) as SavedState;
     return {
-      pasteText: parsed.pasteText ?? "",
       drafts: Array.isArray(parsed.drafts) ? parsed.drafts : [],
       activeDraftId: parsed.activeDraftId ?? null,
     };
   } catch {
-    return { pasteText: "", drafts: [], activeDraftId: null };
+    return { drafts: [], activeDraftId: null };
   }
 }
 
@@ -79,17 +74,17 @@ async function copyText(text: string) {
 
 function App() {
   const saved = useMemo(() => loadSavedState(), []);
-  const [pasteText, setPasteText] = useState(saved.pasteText);
+  const [pasteText, setPasteText] = useState("");
   const [drafts, setDrafts] = useState<RelayDraft[]>(saved.drafts);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(saved.activeDraftId);
-  const [view, setView] = useState<ViewKey>(saved.activeDraftId ? "dashboard" : "capture");
+  const [view, setView] = useState<ViewKey>("capture");
   const [toast, setToast] = useState("");
 
   const activeDraft = drafts.find((draft) => draft.id === activeDraftId) ?? drafts[0] ?? null;
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pasteText, drafts, activeDraftId }));
-  }, [activeDraftId, drafts, pasteText]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ drafts, activeDraftId }));
+  }, [activeDraftId, drafts]);
 
   useEffect(() => {
     if (!toast) return;
@@ -110,17 +105,13 @@ function App() {
     setView(nextView);
   };
 
-  const loadSample = () => {
-    setPasteText(sampleMeetingNotes);
-    setToast("Sample notes loaded.");
-  };
-
   const reset = () => {
     setPasteText("");
     setDrafts([]);
     setActiveDraftId(null);
     setView("capture");
     window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem("relay:workspace:v2");
     setToast("Relay reset.");
   };
 
@@ -249,9 +240,7 @@ function App() {
       </aside>
 
       <section className="main-area">
-        {view === "capture" && (
-          <CapturePage pasteText={pasteText} setPasteText={setPasteText} loadSample={loadSample} generate={generate} reset={reset} />
-        )}
+        {view === "capture" && <CapturePage pasteText={pasteText} setPasteText={setPasteText} generate={generate} reset={reset} />}
         {view === "loading" && <LoadingPage />}
         {view === "dashboard" && activeDraft && (
           <DashboardPage
@@ -302,13 +291,11 @@ function NavButton({ active, icon, label, onClick }: { active: boolean; icon: Re
 function CapturePage({
   pasteText,
   setPasteText,
-  loadSample,
   generate,
   reset,
 }: {
   pasteText: string;
   setPasteText: (text: string) => void;
-  loadSample: () => void;
   generate: () => void;
   reset: () => void;
 }) {
@@ -325,10 +312,6 @@ function CapturePage({
             <button className="primary-button" type="button" onClick={generate}>
               <Sparkles size={17} />
               Generate dashboard
-            </button>
-            <button className="ghost-button" type="button" onClick={loadSample}>
-              <ClipboardCopy size={17} />
-              Load sample
             </button>
             <button className="ghost-button" type="button" onClick={reset}>
               <RefreshCw size={17} />
@@ -390,13 +373,10 @@ function TemplateCard() {
       <TemplateLinkIcon />
       <span className="eyebrow">Google Docs</span>
       <h2>Meeting notes template</h2>
-      <p>Use the editable source doc to keep every pasted note structured for Relay.</p>
+      <p>Open a fresh copy of the meeting notes template, then paste your completed notes into Relay.</p>
       <a className="template-link" href={TEMPLATE_COPY_URL} target="_blank" rel="noreferrer">
         Open copy link
         <ArrowRight size={16} />
-      </a>
-      <a className="template-edit-link" href={TEMPLATE_EDIT_URL} target="_blank" rel="noreferrer">
-        Edit source doc
       </a>
     </aside>
   );
@@ -404,12 +384,9 @@ function TemplateCard() {
 
 function TemplateLinkIcon() {
   return (
-    <svg className="template-link-icon" viewBox="0 0 128 128" aria-hidden="true">
-      <path d="M30 46V22h46" />
-      <path d="M28 102h74V56" />
-      <path d="M54 74l50-50" />
-      <path d="M76 22h30v30" />
-    </svg>
+    <span className="template-link-icon" aria-hidden="true">
+      <FileText size={34} />
+    </span>
   );
 }
 

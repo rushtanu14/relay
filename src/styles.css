@@ -316,8 +316,7 @@ p {
 .primary-button,
 .ghost-button,
 .icon-button,
-.template-link,
-.template-edit-link {
+.template-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -518,17 +517,14 @@ p {
 }
 
 .template-link-icon {
-  width: 78px;
-  height: 78px;
-  color: #111111;
-}
-
-.template-link-icon path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 10;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  display: inline-grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  color: var(--nav);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fffefa;
 }
 
 .template-link {
@@ -536,13 +532,6 @@ p {
   margin-top: 4px;
   color: #ffffff;
   background: var(--nav);
-}
-
-.template-edit-link {
-  width: 100%;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  background: #fffefa;
 }
 
 .loading-page {

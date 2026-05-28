@@ -1,19 +1,26 @@
 # Relay
 
-Relay is a standalone personal meeting follow-up app. Paste one block of meeting notes, generate once, and Relay turns the notes into a ClassLoop-style dashboard with recap, tasks, due dates, resources, questions, and progress.
+Relay turns meeting notes into a personal follow-up dashboard. Paste one block of notes, generate once, and Relay organizes the meeting into a recap, tasks, due dates, resources, open questions, and progress.
 
-## Features
+## What Relay Helps With
 
-- Single paste box for meeting notes.
-- Google Docs template card with a copy-link button and source edit link.
-- Loader transition before the generated dashboard.
-- Personal dashboard inspired by the ClassLoop student dashboard.
-- Editable task titles, statuses, and due-date text.
-- Resources, questions, insights, history, local persistence, recap copy, and JSON export.
+- Capture messy meeting notes in one place.
+- Turn action items into editable tasks.
+- Track due dates, resources, questions, and next steps.
+- Save generated dashboards in your browser history.
+- Copy a clean recap or export the dashboard as JSON.
 
-## Google Docs Template
+## How To Use It
 
-Create a Google Doc with this structure, then publish/share it so visitors can copy it:
+1. Open the [Relay meeting notes template](https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy).
+2. Fill in the template during or after a meeting.
+3. Paste the completed notes into Relay.
+4. Generate your dashboard.
+5. Review your tasks, mark progress, copy the recap, or export the dashboard.
+
+## Notes Format
+
+Relay works best when your notes follow this structure:
 
 ```text
 Meeting title:
@@ -28,33 +35,4 @@ Questions:
 Due dates:
 
 Meeting minutes:
-```
-
-Set the links in `.env.local`:
-
-```bash
-VITE_RELAY_TEMPLATE_COPY_URL=https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy
-VITE_RELAY_TEMPLATE_EDIT_URL=https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/edit?tab=t.0
-```
-
-## Commands
-
-```bash
-npm install
-npm run dev
-npm run test
-npm run build
-npm run test:browser
-```
-
-## Project Structure
-
-```text
-src/
-  App.tsx       Relay UI and page state
-  relay.ts      Meeting-note parsing and draft generation
-  styles.css    ClassLoop-inspired visual system
-tests/
-  relay.test.ts parser tests
-  browser/      Playwright flow tests
 ```
