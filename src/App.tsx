@@ -33,10 +33,10 @@ type SavedState = {
 const STORAGE_KEY = "relay:workspace:v2";
 const TEMPLATE_COPY_URL =
   import.meta.env.VITE_RELAY_TEMPLATE_COPY_URL ||
-  "https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/copy";
+  "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy";
 const TEMPLATE_EDIT_URL =
   import.meta.env.VITE_RELAY_TEMPLATE_EDIT_URL ||
-  "https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/edit";
+  "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/edit?tab=t.0";
 
 const statusLabels: Record<TaskStatus, string> = {
   todo: "Todo",

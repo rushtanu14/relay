@@ -10,7 +10,7 @@ test("single paste input generates the ClassLoop-style dashboard", async ({ page
   await expect(page.getByRole("textbox", { name: "Meeting notes" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Open copy link/i })).toHaveAttribute(
     "href",
-    "https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/copy",
+    "https://docs.google.com/document/d/17qDjDwntSB_QHYE6rn-TKwiOrIWyxPBywMzSwNJUhVU/copy",
   );
   await expect(page.getByRole("heading", { name: "Meeting notes template" })).toBeVisible();
 
