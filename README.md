@@ -33,8 +33,8 @@ Meeting minutes:
 Set the links in `.env.local`:
 
 ```bash
-VITE_RELAY_TEMPLATE_COPY_URL=https://docs.google.com/document/d/YOUR_RELAY_TEMPLATE_DOC_ID/copy
-VITE_RELAY_TEMPLATE_EDIT_URL=https://docs.google.com/document/d/YOUR_RELAY_TEMPLATE_DOC_ID/edit
+VITE_RELAY_TEMPLATE_COPY_URL=https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/copy
+VITE_RELAY_TEMPLATE_EDIT_URL=https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/edit
 ```
 
 ## Commands

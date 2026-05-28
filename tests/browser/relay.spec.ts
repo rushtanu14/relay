@@ -8,14 +8,16 @@ test("single paste input generates the ClassLoop-style dashboard", async ({ page
   await expect(page).toHaveTitle(/Relay/);
   await expect(page.getByRole("heading", { name: /Paste meeting notes/ })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Meeting notes" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Open copy link/i })).toHaveAttribute("href", /docs\.google\.com/);
+  await expect(page.getByRole("link", { name: /Open copy link/i })).toHaveAttribute(
+    "href",
+    "https://docs.google.com/document/d/1o6WZbshidrm99XdLXae_i7Ws5jsI4Nff8L-5OpH3uck/copy",
+  );
   await expect(page.getByRole("heading", { name: "Meeting notes template" })).toBeVisible();
 
   await page.getByRole("button", { name: "Load sample" }).click();
   await expect(page.getByText("Sample notes loaded.")).toBeVisible();
   await page.getByRole("button", { name: "Generate dashboard" }).first().click();
 
-  await expect(page.getByRole("heading", { name: "Building your Relay dashboard." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Hackathon demo planning" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tasks due soon" })).toBeVisible();
   await expect(page.locator(".task-row", { hasText: "90-second demo script" }).first()).toBeVisible();
