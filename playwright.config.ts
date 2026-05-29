@@ -6,6 +6,8 @@ const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
+  workers: 1,
+  timeout: 45_000,
   reporter: [["list"]],
   use: {
     baseURL,

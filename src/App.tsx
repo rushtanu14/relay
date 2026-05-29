@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -29,6 +29,20 @@ type SavedState = {
   activeDraftId: string | null;
 };
 
+type PointerPoint = {
+  x: number;
+  y: number;
+  capturedAt: number;
+};
+
+type ConfettiBurst = {
+  id: string;
+  x: number;
+  y: number;
+};
+
+const POINTER_CONFETTI_MAX_AGE_MS = 3000;
+const CONFETTI_LIFETIME_MS = 1800;
 const STORAGE_KEY = "relay:workspace:v3";
 const TEMPLATE_COPY_URL =
   import.meta.env.VITE_RELAY_TEMPLATE_COPY_URL ||
@@ -74,17 +88,47 @@ async function copyText(text: string) {
 
 function App() {
   const saved = useMemo(() => loadSavedState(), []);
+  const lastPointerRef = useRef<PointerPoint | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [drafts, setDrafts] = useState<RelayDraft[]>(saved.drafts);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(saved.activeDraftId);
   const [view, setView] = useState<ViewKey>("capture");
   const [toast, setToast] = useState("");
+  const [confettiBursts, setConfettiBursts] = useState<ConfettiBurst[]>([]);
 
   const activeDraft = drafts.find((draft) => draft.id === activeDraftId) ?? drafts[0] ?? null;
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ drafts, activeDraftId }));
   }, [activeDraftId, drafts]);
+
+  useEffect(() => {
+    const rememberPoint = (x: number, y: number) => {
+      lastPointerRef.current = {
+        x,
+        y,
+        capturedAt: performance.now(),
+      };
+    };
+    const rememberPointer = (event: PointerEvent) => {
+      if (!event.isPrimary) return;
+      rememberPoint(event.clientX, event.clientY);
+    };
+    const rememberMouse = (event: MouseEvent) => {
+      rememberPoint(event.clientX, event.clientY);
+    };
+
+    window.addEventListener("pointermove", rememberPointer, { passive: true });
+    window.addEventListener("pointerdown", rememberPointer, { passive: true });
+    window.addEventListener("mousemove", rememberMouse, { passive: true });
+    window.addEventListener("mousedown", rememberMouse, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", rememberPointer);
+      window.removeEventListener("pointerdown", rememberPointer);
+      window.removeEventListener("mousemove", rememberMouse);
+      window.removeEventListener("mousedown", rememberMouse);
+    };
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -116,13 +160,15 @@ function App() {
   };
 
   const generate = () => {
-    if (!pasteText.trim()) {
+    const submittedNotes = pasteText;
+    if (!submittedNotes.trim()) {
       setToast("Paste meeting notes first.");
       return;
     }
+    setPasteText("");
     setView("loading");
     window.setTimeout(() => {
-      const draft = createRelayDraft(pasteText);
+      const draft = createRelayDraft(submittedNotes);
       setDrafts((current) => [draft, ...current.filter((item) => item.id !== draft.id)].slice(0, 12));
       setActiveDraftId(draft.id);
       setView("dashboard");
@@ -151,6 +197,48 @@ function App() {
     }));
   };
 
+  const completionPoint = (fallbackElement?: HTMLElement | null) => {
+    const pointer = lastPointerRef.current;
+    if (pointer && performance.now() - pointer.capturedAt <= POINTER_CONFETTI_MAX_AGE_MS) {
+      return { x: pointer.x, y: pointer.y };
+    }
+
+    if (fallbackElement) {
+      const rect = fallbackElement.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+    }
+
+    return {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+  };
+
+  const celebrateTasks = (taskIds: string[], fallbackElement?: HTMLElement | null) => {
+    const uniqueTaskIds = Array.from(new Set(taskIds));
+    if (!uniqueTaskIds.length) return;
+    const point = completionPoint(fallbackElement);
+    const burst: ConfettiBurst = {
+      id: `confetti-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+      ...point,
+    };
+    setConfettiBursts((current) => [...current, burst].slice(-8));
+    window.setTimeout(() => {
+      setConfettiBursts((current) => current.filter((item) => item.id !== burst.id));
+    }, CONFETTI_LIFETIME_MS);
+  };
+
+  const updateTaskStatus = (taskId: string, status: TaskStatus, fallbackElement?: HTMLElement | null) => {
+    const task = activeDraft?.tasks.find((item) => item.id === taskId);
+    if (task && task.status !== "complete" && status === "complete") {
+      celebrateTasks([taskId], fallbackElement);
+    }
+    updateTask(taskId, { status });
+  };
+
   const addTask = () => {
     updateActiveDraft((draft) => ({
       ...draft,
@@ -176,11 +264,13 @@ function App() {
     setToast("Task removed.");
   };
 
-  const markAllComplete = () => {
+  const markAllComplete = (fallbackElement?: HTMLElement | null) => {
+    const incompleteTaskIds = activeDraft?.tasks.filter((task) => task.status !== "complete").map((task) => task.id) ?? [];
     updateActiveDraft((draft) => ({
       ...draft,
       tasks: draft.tasks.map((task) => ({ ...task, status: "complete" })),
     }));
+    celebrateTasks(incompleteTaskIds, fallbackElement);
     setToast("Tasks marked complete.");
   };
 
@@ -247,6 +337,7 @@ function App() {
             draft={activeDraft}
             completion={completion}
             updateTask={updateTask}
+            updateTaskStatus={updateTaskStatus}
             addTask={addTask}
             removeTask={removeTask}
             markAllComplete={markAllComplete}
@@ -268,6 +359,8 @@ function App() {
         )}
         {view === "template" && <TemplatePage copyTemplate={copyTemplate} />}
       </section>
+
+      <ConfettiLayer bursts={confettiBursts} />
 
       {toast ? (
         <div className="toast" role="status">
@@ -414,6 +507,7 @@ function DashboardPage({
   draft,
   completion,
   updateTask,
+  updateTaskStatus,
   addTask,
   removeTask,
   markAllComplete,
@@ -424,9 +518,10 @@ function DashboardPage({
   draft: RelayDraft;
   completion: number;
   updateTask: (taskId: string, changes: Partial<RelayTask>) => void;
+  updateTaskStatus: (taskId: string, status: TaskStatus, fallbackElement?: HTMLElement | null) => void;
   addTask: () => void;
   removeTask: (taskId: string) => void;
-  markAllComplete: () => void;
+  markAllComplete: (fallbackElement?: HTMLElement | null) => void;
   copyRecap: () => void;
   exportDraft: () => void;
   newPaste: () => void;
@@ -450,16 +545,16 @@ function DashboardPage({
       </section>
 
       <section className="metric-grid" aria-label="Dashboard summary">
-        <MetricCard tone="green" icon={<ListChecks />} label="Tasks" value={String(draft.tasks.length)} />
-        <MetricCard tone="blue" icon={<Link2 />} label="Resources" value={String(draft.resources.length)} />
-        <MetricCard tone="amber" icon={<BookOpen />} label="Questions" value={String(draft.questions.length)} />
-        <MetricCard tone="rose" icon={<CheckCircle2 />} label="Complete" value={`${completion}%`} />
+        <MetricCard tone="green" icon={<ListChecks size={20} />} label="Tasks" value={String(draft.tasks.length)} />
+        <MetricCard tone="blue" icon={<Link2 size={20} />} label="Resources" value={String(draft.resources.length)} />
+        <MetricCard tone="amber" icon={<BookOpen size={20} />} label="Questions" value={String(draft.questions.length)} />
+        <MetricCard tone="rose" icon={<CheckCircle2 size={20} />} label="Complete" value={`${completion}%`} />
       </section>
 
       <Panel title="Tasks due soon" icon={<Clock3 />}>
         <div className="task-list">
           {dueSoon.map((task) => (
-            <div className="task-row" key={`due-${task.id}`}>
+            <div className={task.status === "complete" ? "task-row is-complete" : "task-row"} key={`due-${task.id}`}>
               <span className="task-check">{task.status === "complete" ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</span>
               <span>
                 <strong>{task.title}</strong>
@@ -491,7 +586,7 @@ function DashboardPage({
             <ClipboardCopy size={17} />
             Copy recap
           </button>
-          <button className="primary-button" type="button" onClick={markAllComplete}>
+          <button className="primary-button" type="button" onClick={(event) => markAllComplete(event.currentTarget)}>
             <CheckCircle2 size={17} />
             Mark all complete
           </button>
@@ -502,7 +597,7 @@ function DashboardPage({
         <Panel title="Your tasks" icon={<ListChecks />}>
           <div className="editable-task-list">
             {draft.tasks.map((task) => (
-              <article className="editable-task" key={task.id}>
+              <article className={task.status === "complete" ? "editable-task is-complete" : "editable-task"} key={task.id}>
                 <label className="field">
                   <span>Task</span>
                   <input value={task.title} onChange={(event) => updateTask(task.id, { title: event.target.value })} />
@@ -512,7 +607,7 @@ function DashboardPage({
                   <select
                     aria-label={`Status for ${task.title}`}
                     value={task.status}
-                    onChange={(event) => updateTask(task.id, { status: event.target.value as TaskStatus })}
+                    onChange={(event) => updateTaskStatus(task.id, event.target.value as TaskStatus, event.currentTarget)}
                   >
                     {Object.entries(statusLabels).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -527,7 +622,7 @@ function DashboardPage({
                     aria-label={`Due date for ${task.title}`}
                     value={task.dueDateText}
                     onChange={(event) => updateTask(task.id, { dueDateText: event.target.value })}
-                    placeholder="Friday, 5 PM"
+                    placeholder="Enter due date"
                   />
                 </label>
                 <button className="icon-button danger" type="button" onClick={() => removeTask(task.id)} aria-label={`Remove ${task.title}`}>
@@ -598,6 +693,39 @@ function DashboardPage({
         </button>
       </div>
     </div>
+  );
+}
+
+function ConfettiLayer({ bursts }: { bursts: ConfettiBurst[] }) {
+  if (!bursts.length) return null;
+
+  return (
+    <div className="confetti-layer" aria-hidden="true">
+      {bursts.map((burst) => (
+        <TaskConfetti burst={burst} key={burst.id} />
+      ))}
+    </div>
+  );
+}
+
+function TaskConfetti({ burst }: { burst: ConfettiBurst }) {
+  const style = {
+    "--confetti-x": `${Math.round(burst.x)}px`,
+    "--confetti-y": `${Math.round(burst.y)}px`,
+  } as React.CSSProperties;
+
+  return (
+    <span className="task-confetti" data-testid="task-confetti" style={style}>
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+    </span>
   );
 }
 
